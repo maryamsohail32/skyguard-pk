@@ -1,0 +1,41 @@
+﻿[theme]
+base = "dark"
+
+# Palette — deep navy with a single sky-blue accent
+primaryColor             = "#38BDF8"
+backgroundColor          = "#0B1120"
+secondaryBackgroundColor = "#152032"
+textColor                = "#E2E8F0"
+linkColor                = "#38BDF8"
+borderColor              = "#1E3A5F"
+
+showWidgetBorder  = true
+showSidebarBorder = true
+baseRadius        = "large"
+buttonRadius      = "full"
+
+font        = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@600;700&display=swap"
+codeFont    = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+baseFontSize       = 15
+baseFontWeight     = 400
+headingFontSizes   = ["34px", "26px", "20px", "17px", "14px", "12px"]
+headingFontWeights = [700, 600, 600, 600, 500, 500]
+linkUnderline      = false
+
+chartCategoricalColors = [
+    "#38BDF8",
+    "#FB923C",
+    "#34D399",
+    "#A78BFA",
+    "#F472B6",
+    "#FBBF24",
+    "#94A3B8",
+]
+
+[theme.sidebar]
+backgroundColor          = "#091929"
+secondaryBackgroundColor = "#0F2539"
+textColor                = "#CBD5E1"
+borderColor              = "#1E3A5F"
+primaryColor             = "#38BDF8"

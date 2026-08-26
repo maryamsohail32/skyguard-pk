@@ -45,12 +45,34 @@ def load_models():
     return flood_model, heatwave_model
 
 
+# Icons per risk level for the pill badges
+_RISK_ICONS = {
+    "LOW":    "✓",
+    "MEDIUM": "▲",
+    "HIGH":   "⚠",
+}
+
+
 def risk_badge(risk_level):
     color = RISK_COLORS.get(risk_level, "#95A5A6")
+    icon  = _RISK_ICONS.get(risk_level, "")
+    # Pill card: rounded, drop-shadow, icon prefix, larger bold text
     st.markdown(
-        f"<div style='background-color:{color}; color:white; padding:10px 16px; "
-        f"border-radius:8px; display:inline-block; font-weight:bold; font-size:18px;'>"
-        f"{risk_level}</div>",
+        f"<div style='"
+        f"background-color:{color};"
+        f"color:#fff;"
+        f"padding:12px 22px;"
+        f"border-radius:999px;"
+        f"display:inline-flex;"
+        f"align-items:center;"
+        f"gap:8px;"
+        f"font-weight:700;"
+        f"font-size:20px;"
+        f"letter-spacing:0.04em;"
+        f"box-shadow:0 4px 14px {color}55;"
+        f"'>"
+        f"<span style='font-size:18px;'>{icon}</span>{risk_level}"
+        f"</div>",
         unsafe_allow_html=True,
     )
 
@@ -92,6 +114,64 @@ def apply_heat_thresholds(df, heat_temp_c, heat_consec):
 
 
 ADJUSTED_LABEL = ":material/tune: Adjusted view — not model prediction"
+
+# ── Global CSS ────────────────────────────────────────────────────────────────
+_CSS = """
+<style>
+/* Section spacing */
+.block-container { padding-top: 2rem; padding-bottom: 3rem; }
+
+/* Hero header */
+.sg-hero-title {
+    font-size: 2.6rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: #E2E8F0;
+}
+.sg-hero-sub {
+    font-size: 1rem;
+    color: #94A3B8;
+    margin-top: 0.2rem;
+    margin-bottom: 0.5rem;
+}
+.sg-hero-rule {
+    height: 3px;
+    background: linear-gradient(90deg, #38BDF8 0%, #0EA5E9 40%, transparent 100%);
+    border: none;
+    border-radius: 2px;
+    margin: 0.8rem 0 1.4rem 0;
+}
+
+/* Risk cards */
+.sg-risk-card {
+    background: #152032;
+    border: 1px solid #1E3A5F;
+    border-radius: 16px;
+    padding: 1.25rem 1.4rem 1.1rem 1.4rem;
+    min-height: 160px;
+}
+.sg-risk-card h3 {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+/* Sidebar credit */
+.sg-sidebar-credit {
+    font-size: 0.75rem;
+    color: #475569;
+    text-align: center;
+    margin-top: 1.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #1E3A5F;
+    line-height: 1.6;
+}
+</style>
+"""
 
 
 def pakistan_map(latest_df, risk_type, adjusted=False):
@@ -174,8 +254,17 @@ def pakistan_map(latest_df, risk_type, adjusted=False):
 
 
 def main():
-    st.title("🌦️ SkyGuard PK")
-    st.caption("NASA satellite data → plain-language flood & heatwave risk alerts for Pakistan")
+    st.markdown(_CSS, unsafe_allow_html=True)
+
+    # ── Hero header ───────────────────────────────────────────────────────
+    st.markdown(
+        "<div class='sg-hero-title'>🌦️ SkyGuard PK</div>"
+        "<div class='sg-hero-sub'>"
+        "NASA satellite data → plain-language flood &amp; heatwave risk alerts for Pakistan"
+        "</div>"
+        "<hr class='sg-hero-rule'>",
+        unsafe_allow_html=True,
+    )
 
     lang = st.radio("Language / زبان", ["English", "اردو"], horizontal=True)
 
@@ -234,6 +323,13 @@ def main():
             or heat_consec   != DEFAULT_HEAT_CONSEC
         ):
             st.caption(":material/info: Thresholds differ from training defaults")
+
+        st.markdown(
+            "<div class='sg-sidebar-credit'>"
+            "Powered by<br><strong>NASA POWER API</strong><br>+ IBM Bob"
+            "</div>",
+            unsafe_allow_html=True,
+        )
 
     # ── Decide per-hazard whether to use the model or adjusted thresholds ─
     latest_raw = df.sort_values("date").groupby("city").tail(1).reset_index(drop=True)
@@ -296,7 +392,7 @@ def main():
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("Flood Risk")
+        st.markdown("<div class='sg-risk-card'><h3>🌊 Flood risk</h3>", unsafe_allow_html=True)
         risk_badge(flood_pred)
         if flood_adjusted:
             st.caption(ADJUSTED_LABEL)
@@ -305,19 +401,28 @@ def main():
         ).idxmax()
         explanation = explain_flood_risk(latest_row, flood_pred, top_feature)
         st.write(explanation["urdu"] if lang == "اردو" else explanation["english"])
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
-        st.subheader("Heatwave Risk")
+        st.markdown("<div class='sg-risk-card'><h3>🌡️ Heatwave risk</h3>", unsafe_allow_html=True)
         risk_badge(heat_pred)
         if heat_adjusted:
             st.caption(ADJUSTED_LABEL)
         explanation = explain_heatwave_risk(latest_row, heat_pred)
         st.write(explanation["urdu"] if lang == "اردو" else explanation["english"])
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.divider()
-    st.subheader("7-Day Trend" if lang == "English" else "7 Din Ka Trend")
+    st.subheader("7-day trend" if lang == "English" else "7 Din Ka Trend")
+    st.caption(
+        f"Last 30 days of precipitation (mm), temperature (°C), and soil wetness (fraction) for {city}."
+        if lang == "English"
+        else f"{city} کے لیے آخری 30 دن کی بارش، درجہ حرارت اور مٹی کی نمی۔"
+    )
     trend_df = city_df.tail(30).set_index("date")[["precipitation", "temperature", "soil_wetness"]]
-    st.line_chart(trend_df)
+    st.line_chart(
+        trend_df,
+        color=["#38BDF8", "#FB923C", "#34D399"],
+    )
 
     with st.expander("About this data / Data ke baray mein"):
         st.write(

@@ -1,98 +1,111 @@
-# SkyGuard PK
+![SkyGuard PK Header](./screenshots/header-banner.png)
 
-**NASA satellite data → plain-language flood & heatwave risk alerts for Pakistan, in Urdu and English.**
+### NASA satellite data → plain-language flood & heatwave risk alerts for Pakistan, in Urdu and English.
 
-## Problem Statement
+*Built for the IBM AI Builders Challenge — August 2026 — Advance Space Exploration with AI*
 
-Pakistan faces recurring flood and heatwave disasters, yet the satellite-derived
-weather and soil data that could provide early warning (collected daily by NASA)
-remains largely inaccessible to the people who need it most — local authorities,
-communities, and students — due to its raw, technical format and lack of
-localized, bilingual interpretation.
+---
 
-## Solution Description
+## The Problem
 
-SkyGuard PK pulls historical and near-real-time weather data (precipitation,
-temperature, humidity, soil moisture) from NASA's POWER API for 8 major
-Pakistani cities, uses a trained machine learning model to classify flood and
-heatwave risk, and presents it through an interactive bilingual (Urdu/English)
-dashboard — including a country-wide risk map, per-city plain-language
-explanations, and adjustable sensitivity controls for exploring risk thresholds.
+NASA's satellites collect precipitation, temperature, and soil-moisture data over Pakistan **every single day** — data precise enough to flag flood and heatwave risk before it becomes a disaster. But this data lives in raw scientific formats, in English, built for researchers — not for the communities and local authorities who actually need to act on it.
 
-## AI Approach & Architecture
+**SkyGuard PK closes that gap.**
+
+---
+
+## What It Does
+
+| | |
+|---|---|
+| 🛰️ **Pulls** | 5 years of NASA POWER satellite data across 8 major Pakistani cities |
+| 🌲 **Predicts** | Flood & heatwave risk using a trained Random Forest model — not just an LLM guessing |
+| 🗺️ **Visualizes** | A live, color-coded risk map of Pakistan |
+| 🗣️ **Explains** | Every prediction in plain-language, bilingual (Urdu + English) alerts |
+| 🎚️ **Lets you explore** | Adjustable sensitivity — while keeping the trained model as the honest default |
+
+![Pakistan risk map — 8 cities color-coded by flood risk, per-city bilingual risk badges and 7-day trend](./screenshots/dashboard-main.png)
+
+*Live dashboard: color-coded risk badges, plain-language bilingual explanations, and a 7-day environmental trend — all driven by the trained Random Forest model.*
+
+![Alert sensitivity sliders — exploratory view, clearly separated from the trained model's default prediction](./screenshots/alert-sliders.png)
+
+*Users can explore threshold sensitivity, but the trained model remains the honest default — the two are never conflated.*
+
+---
+
+## Why This Is Different
+
+Most AI-for-space projects in this challenge translate satellite data into text using an LLM. SkyGuard PK's core prediction is a **real trained machine learning model** with measurable, honestly-reported accuracy — the LLM-style explanation layer sits *on top of* that, not instead of it. And it's built for a specific, underserved region and language, not a generic global demo.
+
+---
+
+## Architecture
 
 ```
-NASA POWER API (8 Pakistani cities, 5 years historical data)
-        │
-        ▼
-Feature engineering (7-day rolling rainfall, soil wetness, temperature, humidity)
-        │
-        ▼
-Random Forest Classifier (separate models for flood risk and heatwave risk)
-        │
-        ▼
-Plain-language bilingual explanation layer
-        │
-        ▼
-Streamlit dashboard:
-  - Pakistan-wide risk map (color-coded by city)
-  - Per-city risk badges + explanations
-  - Adjustable sensitivity sliders (clearly labeled as distinct from model output)
+NASA POWER API  →  Feature Engineering  →  Random Forest Classifier
+(8 PK cities,       (7-day rolling         (flood risk model +
+ 5yr history)        rainfall, soil         heatwave risk model)
+                      wetness, temp)                │
+                                                      ▼
+                                    Bilingual plain-language explainer
+                                                      │
+                                                      ▼
+                                    Streamlit dashboard
+                                    (map · badges · sliders)
 ```
 
-**Model:** Random Forest classifier, trained with `class_weight="balanced"` to
-handle the natural imbalance between LOW/MEDIUM/HIGH risk days.
+**Model:** Random Forest (`class_weight="balanced"` to handle rare HIGH-risk days)
 
-**Honest limitation:** Flood and heatwave risk thresholds (e.g., 100mm/7-day
-rainfall, 40°C extreme heat) are self-defined, reasonable approximations based
-on commonly cited regional triggers — not official government disaster
-classifications. This is disclosed rather than overstated.
+**Performance (from `train_model.py`, real held-out test data):**
 
-## Selected Challenge Theme
+| Model | Precision | Recall |
+|---|---|---|
+| Flood risk | *[fill in from your terminal output]* | *[fill in]* |
+| Heatwave risk | *[fill in from your terminal output]* | *[fill in]* |
 
-Advance Space Exploration with AI
+**Honest limitation:** Risk thresholds (e.g. 100mm/7-day rainfall, 40°C extreme heat) are self-defined, reasonable approximations from commonly cited regional triggers — not official disaster-management classifications. Disclosed here rather than overstated.
+
+---
 
 ## How IBM Bob Was Used
 
-IBM Bob was used throughout development for genuine code review and design
-decisions, not just code generation:
+IBM Bob was used for genuine iterative development — not just one-shot code generation:
 
-1. **Edge-case review of risk logic** — Asked Bob to review `label_risk.py`'s
-   threshold logic for edge cases. Bob identified 8 issues, including a
-   high-severity gap (humidity was loaded but never used in heatwave
-   classification, despite wet-bulb temperature being the real physiological
-   risk driver in Pakistan's pre-monsoon season) and a medium-severity gap
-   (extreme rainfall alone could be under-labeled as MEDIUM instead of HIGH
-   when soil wetness didn't independently cross its own threshold). These are
-   documented as known limitations given project time constraints.
+**1. Edge-case review of risk logic**
+Asked Bob to review `label_risk.py`'s threshold logic. Bob surfaced 8 issues, including a high-severity one: humidity was loaded but never used in heatwave classification, despite wet-bulb temperature being the real physiological risk driver in Pakistan's pre-monsoon season.
 
-2. **Pakistan map view** — Asked Bob to add a map showing all 8 cities colored
-   by current risk level. Bob implemented this using Streamlit's native
-   Vega-Lite support rather than adding an external mapping dependency,
-   keeping the project lightweight.
+**2. Pakistan map view**
+Asked Bob to add a risk map for all 8 cities. Bob implemented it with Streamlit's native Vega-Lite support — no extra dependency added.
 
-3. **Alert sensitivity sliders** — Asked Bob to add sliders so users could
-   interactively adjust risk thresholds and explore sensitivity.
+**3. Alert sensitivity sliders**
+Asked Bob to add interactive threshold sliders for exploring sensitivity.
 
-4. **Model integrity fix (design decision, Bob-implemented)** — After
-   reviewing Bob's slider implementation, identified a risk: sliders were
-   bypassing the trained model entirely, which would misrepresent the
-   project's core claim — a real trained ML model, not just adjustable rules.
-   Directed Bob to restore the trained Random Forest model as the default
-   prediction source for both the map and per-city badges, with the
-   slider-based view only activating when a user explicitly moves a slider
-   away from its default, clearly labeled "Adjusted view — not model
-   prediction" to keep the two outputs unambiguous.
+**4. Model integrity fix — a design decision I made, Bob implemented**
+Reviewing Bob's slider work, I noticed it let sliders silently bypass the trained model — which would misrepresent the project's core claim to any technical reviewer. I directed Bob to make the trained model the default for both the map and per-city badges, with slider-adjusted values only shown when explicitly toggled, and clearly labeled *"Adjusted view — not model prediction."*
 
-This iterative process — generate, review, catch a design flaw, redirect —
-reflects how the project treats AI-assisted development: Bob accelerates
-implementation, but every output was reviewed against what the project
-actually needed to honestly claim.
+This loop — generate → review → catch a flaw → redirect — is the actual workflow, and it's why the model's credibility stays intact even with an interactive slider feature layered on top.
+
+---
 
 ## Tech Stack
 
-Python, pandas, scikit-learn, Streamlit, NASA POWER API, IBM Bob
+`Python` · `pandas` · `scikit-learn` · `Streamlit` · `NASA POWER API` · `IBM Bob`
 
 ## Setup
 
-See `RUN_ME_FIRST.md` for local setup and run instructions.
+See [`RUN_ME_FIRST.md`](./RUN_ME_FIRST.md) for local setup and run instructions.
+
+---
+
+## Selected Challenge Theme
+
+**Advance Space Exploration with AI**
+
+---
+
+**Topics:** `nasa` `streamlit` `machine-learning` `random-forest` `pakistan` `disaster-resilience` `ibm-bob`
+
+---
+
+*Built by Maryam Sohail Ahmed — BS Artificial Intelligence, Dawood University of Engineering & Technology, Karachi*
