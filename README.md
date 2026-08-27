@@ -1,4 +1,6 @@
-![SkyGuard PK Header](./screenshots/header-banner.png)
+![SkyGuard PK Banner](./screenshots/skyguard-pk-banner.png)
+
+*SkyGuard PK — built for the IBM AI Builders Challenge, turning raw NASA satellite data into usable disaster risk alerts for Pakistan.*
 
 <div align="center">
 
