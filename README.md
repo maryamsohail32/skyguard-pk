@@ -1,8 +1,14 @@
 ![SkyGuard PK Header](./screenshots/header-banner.png)
 
-### NASA satellite data → plain-language flood & heatwave risk alerts for Pakistan, in Urdu and English.
+<div align="center">
 
-*Built for the IBM AI Builders Challenge — August 2026 — Advance Space Exploration with AI*
+### 🌦️ NASA satellite data → plain-language flood & heatwave risk alerts for Pakistan, in Urdu and English.
+
+**Built for the IBM AI Builders Challenge · August 2026 · Advance Space Exploration with AI**
+
+`Python` · `scikit-learn` · `Streamlit` · `NASA POWER API` · `IBM Bob`
+
+</div>
 
 ---
 
@@ -28,15 +34,23 @@ NASA's satellites collect precipitation, temperature, and soil-moisture data ove
 
 *Pakistan risk map — 8 cities color-coded by flood risk. Per-city badge — bilingual plain-language explanation.*
 
+![Same dashboard in Urdu — full interface translation, not just the explanation text](./screenshots/dashboard-urdu.png)
+
+*The same dashboard, fully in Urdu — card headers, risk badges, and explanations all translate together, not just the explanation text.*
+
 ![Alert sensitivity sliders — exploratory view, clearly separated from the trained model's default prediction](./screenshots/alert-sliders.png)
 
 *Alert sensitivity sliders — exploratory view, model remains default.*
+
+![Alert sensitivity sliders in Urdu](./screenshots/sliders-urdu.png)
+
+*Sidebar controls are fully bilingual too.*
 
 ---
 
 ## Why This Is Different
 
-Most AI-for-space projects in this challenge translate satellite data into text using an LLM. SkyGuard PK's core prediction is a **real trained machine learning model** with measurable, honestly-reported accuracy — the LLM-style explanation layer sits *on top of* that, not instead of it. And it's built for a specific, underserved region and language, not a generic global demo.
+Most AI-for-space projects in this challenge translate satellite data into text using an LLM. SkyGuard PK's core prediction is a **real trained machine learning model** with measurable, honestly-reported accuracy — the plain-language explanation layer sits *on top of* that, not instead of it. And it's built for a specific, underserved region and language, not a generic global demo.
 
 ---
 
@@ -46,8 +60,8 @@ Most AI-for-space projects in this challenge translate satellite data into text 
 NASA POWER API  →  Feature Engineering  →  Random Forest Classifier
 (8 PK cities,       (7-day rolling         (flood risk model +
  5yr history)        rainfall, soil         heatwave risk model)
-                      wetness, temp)                │
-                                                      ▼
+                      wetness, temp,                │
+                      humidity)                      ▼
                                     Bilingual plain-language explainer
                                                       │
                                                       ▼
@@ -57,16 +71,31 @@ NASA POWER API  →  Feature Engineering  →  Random Forest Classifier
 
 **Model:** Random Forest (`class_weight="balanced"` to handle rare HIGH-risk days)
 
-**Performance (from `train_model.py`, real held-out test data):**
+### Performance — reported honestly, including what the numbers don't mean
 
-| Model | Precision | Recall |
-|---|---|---|
-| Flood risk | **0.78** | **0.81** |
-| Heatwave risk | **0.74** | **0.79** |
+| Model | Class | Precision | Recall | Support |
+|---|---|---|---|---|
+| Flood risk | HIGH | 1.00 | 0.98 | 46 |
+| Flood risk | MEDIUM | 1.00 | 1.00 | 1,120 |
+| Flood risk | LOW | 1.00 | 1.00 | 1,758 |
+| Heatwave risk | HIGH | 0.57 | 0.67 | 6 |
+| Heatwave risk | MEDIUM | 0.80 | 0.73 | 11 |
+| Heatwave risk | LOW | 1.00 | 1.00 | 2,907 |
 
-*Precision = how often the model's HIGH/MEDIUM predictions were correct. Recall = how often the model successfully caught actual HIGH/MEDIUM risk days.*
+**Important honesty note on the flood model's near-perfect score:** the flood risk labels are themselves derived deterministically from `rain_7day` and `soil_wetness` — the same features the model trains on. Near-1.00 scores here mean the model learned the labeling rule correctly, **not** that it can perfectly predict real-world floods with unseen data patterns. This is disclosed rather than presented as validated real-world accuracy.
 
-**Honest limitation:** Risk thresholds (e.g. 100mm/7-day rainfall, 40°C extreme heat) are self-defined, reasonable approximations from commonly cited regional triggers — not official disaster-management classifications. Disclosed here rather than overstated.
+**Heatwave model note:** more realistic-looking numbers, but the HIGH class has only 6 test examples — too small a sample to treat these scores as statistically reliable. More historical data would be needed to validate further.
+
+**Feature importance (heatwave model) confirms the humidity fix worked:** temperature (0.47) and humidity (0.24) are now the top two drivers, reflecting real wet-bulb heat risk — previously humidity was loaded but unused.
+
+### Threshold calibration — grounded in real 2022 Pakistan flood data
+
+`FLOOD_RAIN_7DAY_MM = 100mm` is an **early-warning threshold**, not a disaster-matching one. It's calibrated with reference to:
+- Pakistan's national 30-year average rainfall benchmark: **130.8mm**
+- Single-day extreme recorded in Naushahro Feroze, Aug 2022: **142mm**
+- Urban flooding threshold observed in Lahore, 2022: **200mm+**
+
+100mm over 7 days is designed to flag *rising* risk before it reaches these disaster-level totals — not to match them after the fact.
 
 ---
 
@@ -86,7 +115,24 @@ Asked Bob to add interactive threshold sliders for exploring sensitivity.
 **4. Model integrity fix — a design decision I made, Bob implemented**
 Reviewing Bob's slider work, I noticed it let sliders silently bypass the trained model — which would misrepresent the project's core claim to any technical reviewer. I directed Bob to make the trained model the default for both the map and per-city badges, with slider-adjusted values only shown when explicitly toggled, and clearly labeled *"Adjusted view — not model prediction."*
 
-This loop — generate → review → catch a flaw → redirect — is the actual workflow, and it's why the model's credibility stays intact even with an interactive slider feature layered on top.
+**5. Humidity gap — closed**
+Bob's original edge-case review (entry #1) flagged that humidity was loaded but unused in heatwave classification. Rather than leave this as an open limitation, directed Bob to incorporate humidity as a secondary HIGH-risk trigger, reflecting wet-bulb temperature risk. Retrained and re-verified metrics afterward — feature importance confirms humidity is now genuinely used (0.24 importance, second only to temperature).
+
+**6. Threshold documentation grounded in real data**
+Directed Bob to update `label_risk.py`'s documentation to explain the 100mm/7-day threshold with reference to real 2022 Pakistan flood records, rather than leaving it as an unexplained constant.
+
+This iterative process — generate, review, catch a flaw, redirect — reflects how the project treats AI-assisted development: Bob accelerates implementation, but every output was reviewed against what the project actually needed to honestly claim.
+
+---
+
+## Impact + Next Steps
+
+**Who this helps:** disaster management authorities, local communities, and students in Pakistan who currently have no accessible, bilingual way to interpret satellite-derived risk data.
+
+**Next steps:**
+- Gather more historical data to validate the heatwave HIGH-risk class more reliably (currently a small sample)
+- Expand coverage from 8 cities to national, district-level granularity
+- Add SMS/low-bandwidth alert delivery for areas with limited internet access
 
 ---
 
@@ -100,17 +146,6 @@ See [`RUN_ME_FIRST.md`](./RUN_ME_FIRST.md) for local setup and run instructions.
 
 ---
 
-## Impact + Next Steps
-
-**Who this helps:** disaster management authorities, local communities, and students in Pakistan who currently have no accessible, bilingual way to interpret satellite-derived risk data.
-
-**Next steps:**
-- Calibrate risk thresholds against real historical disaster records (currently self-defined approximations)
-- Expand coverage from 8 cities to national, district-level granularity
-- Add SMS/low-bandwidth alert delivery for areas with limited internet access
-
----
-
 ## Selected Challenge Theme
 
 **Advance Space Exploration with AI**
@@ -121,4 +156,8 @@ See [`RUN_ME_FIRST.md`](./RUN_ME_FIRST.md) for local setup and run instructions.
 
 ---
 
+<div align="center">
+
 *Built by Maryam Sohail Ahmed — BS Artificial Intelligence, Dawood University of Engineering & Technology, Karachi*
+
+</div>
